@@ -3,6 +3,7 @@
 #include <string.h>
 #include <thread>
 #include <list>
+#include <mutex>
 #include <ndi.h>
 
 #ifdef __arm__

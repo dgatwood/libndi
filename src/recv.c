@@ -335,10 +335,12 @@ void ndi_recv_free_video(ndi_packet_video_t * video) {
 
 void ndi_recv_free_audio(ndi_packet_audio_t * audio) {
 	free(audio->data);
+	audio->data = NULL;
 }
 
 void ndi_recv_free_metadata(ndi_packet_metadata_t * meta) {
 	free(meta->data);
+	meta->data = NULL;
 }
 
 void ndi_recv_free(ndi_recv_context_t ctx) {
