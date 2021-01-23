@@ -4,6 +4,10 @@
 #include <thread>
 #include <list>
 #include <mutex>
+#include <chrono>
+using namespace std::chrono_literals;
+#include <iostream>
+
 #include <ndi.h>
 
 #ifdef __arm__
@@ -18,20 +22,20 @@ std::mutex _mutex;
 
 void recv_thread(ndi_recv_context_t recv_ctx) {
 
-    ndi_packet_video_t video;
+    ndi_packet_video_t *video = (ndi_packet_video_t*)malloc(sizeof(ndi_packet_video_t));
     ndi_packet_audio_t audio;
     ndi_packet_metadata_t meta;
 
     while (ndi_recv_is_connected(recv_ctx)) {
         
-        int data_type = ndi_recv_capture(recv_ctx, &video, &audio, &meta, 1000);
+        int data_type = ndi_recv_capture(recv_ctx, video, &audio, &meta, 1000);
         switch (data_type) {
                 
             case NDI_DATA_TYPE_VIDEO:
                 //printf("Video data received (%dx%d %.4s).\n", video.width, video.height, (char*)&video.fourcc);
             {
-                ndi_packet_video_t * clone = (ndi_packet_video_t*)malloc(sizeof(ndi_packet_video_t));
-                memcpy(clone, &video, sizeof(ndi_packet_video_t));
+                //ndi_packet_video_t * clone = (ndi_packet_video_t*)malloc(sizeof(ndi_packet_video_t));
+                //memcpy(clone, &video, sizeof(ndi_packet_video_t));
                 _mutex.lock();
                 while (_queue.size() > 2) {
                     ndi_packet_video_t * v = _queue.back();
@@ -39,8 +43,9 @@ void recv_thread(ndi_recv_context_t recv_ctx) {
                     ndi_recv_free_video(v);
                     free(v);
                 }
-                _queue.push_back(clone);
+                _queue.push_back(video/*clone*/);
                 _mutex.unlock();
+                video = (ndi_packet_video_t*)malloc(sizeof(ndi_packet_video_t));
             }
                 break;
                 
@@ -123,10 +128,12 @@ int main(int argc, char* argv[]) {
     
     // NDI codec
 	ndi_codec_context_t codec_ctx = ndi_codec_create();
-    ndi_frame_t frame;
+    ndi_frame_t frame = 0;
     ndi_video_format_t format;
 
     // Main loop
+    unsigned frames = 0;
+    auto start = std::chrono::high_resolution_clock::now();
 	while (loop_ogl()) {
 
 		int width, height;
@@ -157,7 +164,7 @@ int main(int argc, char* argv[]) {
                     int linesize = ndi_frame_get_linesize(frame, i);
                     yuv_data(i, (unsigned char*)data, w, h, linesize);
                 }
-                ndi_frame_free(frame);
+                //ndi_frame_free(frame);
             }
             ndi_recv_free_video(video);
             free(video);
@@ -167,6 +174,14 @@ int main(int argc, char* argv[]) {
         yuv_draw(0, 0, width, height);
 
 		redraw_ogl(0);
+        ++frames;
+        auto time = std::chrono::high_resolution_clock::now();
+        if ((time - start) >= 1000ms)
+        {
+            std::cout << frames << "fps" << std::endl;
+            frames = 0;
+            start = time;
+        }
 	}
 
     ndi_recv_close(recv_ctx);

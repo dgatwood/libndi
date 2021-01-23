@@ -34,11 +34,15 @@ add_library(ndi
     ${NDI_SOURCES}
 )
 
-target_link_libraries(ndi
+target_link_libraries(ndi PUBLIC
     avcodec
     avformat
     avutil
+    avahi-client
+    avahi-common
 )
 target_include_directories(ndi PUBLIC include/)
 target_compile_options(ndi PRIVATE -ftree-vectorize -ftree-loop-vectorize -O4)
+
+add_subdirectory(examples/example-recv-gl)
 
