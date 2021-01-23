@@ -44,5 +44,5 @@ target_link_libraries(ndi PUBLIC
 target_include_directories(ndi PUBLIC include/)
 target_compile_options(ndi PRIVATE -ftree-vectorize -ftree-loop-vectorize -O4)
 
-add_subdirectory(examples/example-recv-gl)
+#add_subdirectory(examples/example-recv-gl)
 
