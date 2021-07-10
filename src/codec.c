@@ -9,12 +9,14 @@
 typedef struct {
 	AVCodec * avcodec;
 	AVCodecContext * avcodec_ctx;
+    AVFrame * frame;
 } internal_codec_context_t;
 
 ndi_codec_context_t ndi_codec_create() {
 	internal_codec_context_t * internal = malloc(sizeof(internal_codec_context_t));
 	internal->avcodec = NULL;
 	internal->avcodec_ctx = NULL;
+    internal->frame = NULL;
 	return internal;
 }
 
@@ -38,6 +40,7 @@ int ndi_codec_open(ndi_codec_context_t ctx, unsigned int fourcc) {
 	int error = avcodec_open2(internal->avcodec_ctx, internal->avcodec, NULL);
 	if (error < 0)
 		return -1;
+    internal->frame = av_frame_alloc();
 
 	return 0;
 }
@@ -66,21 +69,22 @@ ndi_frame_t ndi_codec_decode(ndi_codec_context_t ctx, ndi_packet_video_t * video
 		return NULL;
 	}
 
-	AVFrame * frame = av_frame_alloc();
-	error = avcodec_receive_frame(internal->avcodec_ctx, frame);
+	//AVFrame * frame = av_frame_alloc();
+	error = avcodec_receive_frame(internal->avcodec_ctx, internal->frame);
 	if (error != 0) {
-		av_frame_free(&frame);
+		//av_frame_free(&frame);
 		return NULL;
 	}
 
-	frame->opaque = internal->avcodec_ctx;
+//	frame->opaque = internal->avcodec_ctx;
 
-	return frame;
+	return internal->frame;
 }
 
 void ndi_codec_free(ndi_codec_context_t ctx) {
 	internal_codec_context_t * internal = ctx;
 	avcodec_free_context(&internal->avcodec_ctx);
+    av_frame_free(&internal->frame);
 	free(internal);
 }
 
@@ -96,7 +100,7 @@ int ndi_frame_get_linesize(ndi_frame_t f, int plane) {
 
 void ndi_frame_get_format(ndi_frame_t f, ndi_video_format_t * format) {
 	AVFrame * frame = f;
-	AVCodecContext * codec_ctx = frame->opaque;
+//	AVCodecContext * codec_ctx = frame->opaque;
 	format->width = frame->width;
 	format->height = frame->height;
 

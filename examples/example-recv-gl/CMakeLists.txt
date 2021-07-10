@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 project(example-recv-gl)
 
@@ -11,7 +11,8 @@ endif ()
 if (LINUX)
 	include_directories(/opt/vc/include/)
 	link_directories(/opt/vc/lib/ /usr/lib/arm-linux-gnueabihf/)
-	link_libraries(bcm_host GLESv2 EGL avahi-client avahi-common)
+	link_libraries(bcm_host GLESv2 EGL avahi-client avahi-common pthread)
+	#link_libraries(GLESv2 EGL avahi-client avahi-common pthread)
 endif()
 
 if (NOT LINUX)
@@ -38,18 +39,32 @@ if(APPLE)
 	link_directories(/usr/local/opt/ffmpeg/lib)
 endif()
 
+find_library(LIBAVFORMAT avformat)
+if(NOT LIBAVFORMAT)
+    message(FATAL_ERROR "libavformat library not found")
+else()
+    message("   libavformat found at ${LIBAVFORMAT}")
+endif()
+find_library(LIBAVCODEC avcodec)
+if(NOT LIBAVCODEC)
+    message(FATAL_ERROR "libavcodec library not found")
+else()
+    message("   libavcodec found at ${LIBAVCODEC}")
+endif()
+find_library(LIBAVUTIL avutil)
+if(NOT LIBAVUTIL)
+    message(FATAL_ERROR "libavutil library not found")
+else()
+    message("   libavutil found at ${LIBAVUTIL}")
+endif()
+set(LIBAV ${LIBAVFORMAT} ${LIBAVCODEC} ${LIBAVUTIL})
 
 include_directories(
 	../../include/
 )
 link_directories(
 	../../lib/
-)
-link_libraries(
-	ndi
-	avcodec
-	avformat
-	avutil
+    ../../build/lib/
 )
 
 add_executable(example-recv-gl
@@ -58,4 +73,11 @@ add_executable(example-recv-gl
 	../common/egl.cpp
 	../common/glfw.cpp
 	../common/yuv.cpp
+)
+
+target_link_libraries(example-recv-gl PRIVATE
+	ndi
+    avahi-client
+    avahi-common
+    ${LIBAV}
 )
