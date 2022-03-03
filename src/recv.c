@@ -310,7 +310,7 @@ int ndi_recv_capture(ndi_recv_context_t ctx, ndi_packet_video_t * video, ndi_pac
 		if (header.version > 2)
 		{
 			internal_unscramble(true, (unsigned char*)info, header.info_len, seed);
-			internal_unscramble(false, ((unsigned char*)info) + header.info.len, header.data_len, seed);
+			internal_unscramble(true, ((unsigned char*)info) + header.info.len, header.data_len, seed);
 		}
 		else	
 			internal_unscramble(false, (unsigned char*)info, chunk_len, seed);
