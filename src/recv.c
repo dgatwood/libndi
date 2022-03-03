@@ -307,9 +307,15 @@ int ndi_recv_capture(ndi_recv_context_t ctx, ndi_packet_video_t * video, ndi_pac
 		int chunk_len = header.info_len + header.data_len;
         struct NDIMetaInfoHeader *info = malloc(chunk_len);
 		internal_recv(internal->socket_fd, (unsigned char*)info, chunk_len);
-		internal_unscramble(header.version > 2, (unsigned char*)info, chunk_len, seed);
+		if (header.version > 2)
+		{
+			internal_unscramble(true, (unsigned char*)info, header.info_len, seed);
+			internal_unscramble(false, ((unsigned char*)info) + header.info.len, header.data_len, seed);
+		}
+		else	
+			internal_unscramble(false, (unsigned char*)info, chunk_len, seed);
 
-        meta->timecode = le64toh(info->timecode);
+       		meta->timecode = le64toh(info->timecode);
 		meta->data = malloc(header.data_len);
 		meta->size = header.data_len;
 		memcpy(meta->data, (unsigned char*)info + header.info_len, header.data_len);
